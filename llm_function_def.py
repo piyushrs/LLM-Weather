@@ -1,123 +1,177 @@
 import os
+import requests
+from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 import logging
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 load_dotenv()
 
-# Modify this
-# schedule_meeting_function = {
-#     "name": "schedule_meeting",
-#     "description": "Schedules a meeting with specified attendees at a given time and date.",
-#     "parameters": {
-#         "type": "object",
-#         "properties": {
-#             "attendees": {
-#                 "type": "array",
-#                 "items": {"type": "string"},
-#                 "description": "List of people attending the meeting.",
-#             },
-#             "date": {
-#                 "type": "string",
-#                 "description": "Date of the meeting (e.g., '2024-07-29')",
-#             },
-#             "time": {
-#                 "type": "string",
-#                 "description": "Time of the meeting (e.g., '15:00')",
-#             },
-#             "topic": {
-#                 "type": "string",
-#                 "description": "The subject or topic of the meeting.",
-#             },
-#         },
-#         "required": ["attendees", "date", "time", "topic"],
-#     },
-# }
+try:
+    google_api = os.getenv("google_api")
+except ValueError as ve:
+    logging.error(f"Configuration error: {ve}")
 
-def llm_function():
-    get_current_weather_function = {
-        "name": "get_current_weather",
-        "description": "Fetches the current weather for a specified location.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "The city or area for which to get the weather (e.g., 'London', 'Paris France').",
-                },
-            },
-            "required": ["location"],
-        },
+
+def get_current_weather(location: str) -> dict:
+    '''
+    This function is used to fetch current weather using the weather 
+    api and location provided by the user.
+
+    Args: 
+        location (str): The location for which to fetch the weather.
+    
+    Returns:
+        dict: The current weather data for the specified location.
+    '''
+    print("Fetching weather data...")
+    url = "http://api.weatherapi.com/v1/current.json"
+    params = {
+        "key": os.getenv("weather_api"),
+        "q": location,
     }
-    return get_current_weather_function
+    try:
+        response = requests.get(url, params, timeout = 10)
+        response.raise_for_status()
+        logging.info("Request to %s return status code: %s", url, response.status_code)
+        return response.json()
+    except HTTPError as http_err:
+        logging.error(f"HTTP error occurred: {http_err}")
+        if response.status_code == 400:
+            logging.error("Bad request. Please check the location provided.")
+        return()
+    except ConnectionError as conn_err:
+        logging.error(f"Connection error occurred: {conn_err}")
+        return()
+    except Timeout as time_err:
+        logging.error(f"Timeout error occurred: {time_err}")
+        return()
+    except RequestException as req_err:
+        logging.error(f"Request error occurred: {req_err}")
+        return()
+    except Exception as e:
+        logging.error(f"An unexpected error occurred when fetching weather data: {e}")
+        return()
+    
 
-# Configure the client and tools
-# client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-# tools = types.Tool(function_declarations=[get_current_weather_function])
-# config = types.GenerateContentConfig(tools=[tools])
+def get_aqi(location: str) -> dict:
+    '''
+    This function is used to fetch current weather and the AQI using the weather 
+    api and location provided by the user
 
-# Send request with function declarations
-# response = client.models.generate_content(
-#     model="gemini-2.0-flash",
-#     # contents="Schedule a meeting with Bob and Alice for 03/14/2025 at 10:00 AM about the Q3 planning.",
-#     contents = "What is the weather in Paris?",
-#     config=config,
-# )
+    Args:
+        location (str): The location for which to fetch the weather and aqi information.
+    
+    Returns:
+        dict: The current weather and AQI data for the specified location.
+    '''
+    print("Fetching weather data...")
+    url = "http://api.weatherapi.com/v1/current.json"
+    params = {
+        "key": os.getenv("weather_api"),
+        "q": location,
+        "aqi": "yes"
+    }
+    try:
+        response = requests.get(url, params, timeout = 10)
+        response.raise_for_status()
+        logging.info("Request to %s return status code: %s", url, response.status_code)
+        return response.json()
+    except HTTPError as http_err:
+        logging.error(f"HTTP error occurred: {http_err}")
+        if response.status_code == 400:
+            logging.error("Bad request. Please check the location provided.")
+        return()
+    except ConnectionError as conn_err:
+        logging.error(f"Connection error occurred: {conn_err}")
+        return()
+    except Timeout as time_err:
+        logging.error(f"Timeout error occurred: {time_err}")
+        return()
+    except RequestException as req_err:
+        logging.error(f"Request error occurred: {req_err}")
+        return()
+    except Exception as e:
+        logging.error(f"An unexpected error occurred when fetching weather data: {e}")
+        return()
 
-# Check for a function call
-# if response.candidates[0].content.parts[0].function_call:
-#     function_call = response.candidates[0].content.parts[0].function_call
-#     print(f"Function to call: {function_call.name}")
-#     print(f"Arguments: {function_call.args}")
-#     #  In a real app, you would call your function here:
-#     #  result = schedule_meeting(**function_call.args)
-# else:
-#     print("No function call found in the response.")
-#     print(response.text)
-
-def call_llm(api_key: str, location: str = "Paris"):
+def call_llm(prompt: str):
     '''
     Calls the LLM
     '''
-    get_current_weather_function = llm_function()
-    client = genai.Client(api_key= api_key)
-    tools = types.Tool(function_declarations=[get_current_weather_function])
-    config = types.GenerateContentConfig(tools=[tools])
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=f"What is the weather in {location}?",
-        config=config,
-    )
+    # Function declarations for the LLM if you don't have docstrings in your functions
+    # get_current_weather_function = {
+    #     "name": "get_current_weather",
+    #     "description": "Fetches the current weather for a specified location.",
+    #     "parameters": {
+    #         "type": "object",
+    #         "properties": {
+    #             "location": {
+    #                 "type": "string",
+    #                 "description": "The city or area for which to get the weather (e.g., 'London', 'Paris France').",
+    #             },
+    #         },
+    #         "required": ["location"],
+    #     },
+    # }
 
-    if response.candidates[0].content.parts[0].function_call:
-        function_call = response.candidates[0].content.parts[0].function_call
-        print(f"Function to call: {function_call.name}")
-        print(f"Arguments: {function_call.args}")
-    #  In a real app, you would call your function here:
-    #  result = schedule_meeting(**function_call.args)
-    else:
-        print("No function call found in the response.")
-        return(response.text)
-    
-def get_api_key():
-    '''
-    Gets the api key from .env file
-    '''
-    return os.getenv("google_api")
+    # get_aqi_function = {
+    #     "name": "get_aqi",
+    #     "description": "Fetches the air quality index for a specified location.",
+    #     "parameters": {
+    #         "type": "object",
+    #         "properties": {
+    #             "location": {
+    #                 "type": "string",
+    #                 "description": "The city or area for which to get the AQI (e.g., 'London', 'Paris France').",
+    #             },
+    #         },
+    #         "required": ["location"],
+    #     },
+    # }
+
+    client = genai.Client(api_key= google_api)
+    # tools = types.Tool(function_declarations=[get_current_weather, get_aqi])
+    # config = types.GenerateContentConfig(tools=[tools])
+
+    # You can pass your functions directly in config for the LLM to decide which function to call.
+    config = {
+        "tools": [get_current_weather, get_aqi]
+    }
+
+    chat = client.chats.create(model = "gemini-2.0-flash", config=config)
+    response = chat.send_message(prompt)
+    return response.text
+    # response = client.models.generate_content(
+    #     model="gemini-2.0-flash",
+    #     contents= prompt,
+    #     config=config,
+    # )
+
+    # if response.candidates[0].content.parts[0].function_call:
+    #     function_call = response.candidates[0].content.parts[0].function_call
+    #     print(f"Function to call: {function_call.name}")
+    #     print(f"Arguments: {function_call.args}")
+    # #  In a real app, you would call your function here:
+    #     result = get_current_weather(**function_call.args)
+    #     return result
+    # else:
+    #     # print("No function call found in the response.")
+    #     return(response)
     
 def main():
     '''
     main function for the file
     '''
-    try:
-        api_key = get_api_key()
-    except ValueError as ve:
-        logging.error(f"Configuration error: {ve}") 
-    
-    location = input("Enter your location: ")
-    print(call_llm(api_key, location))
-
+    while True:
+        prompt = input("Enter your prompt: ")
+        if prompt.lower() == "exit" or prompt.lower() == "quit" or prompt.lower() == "bye":
+            break
+        result = call_llm(prompt)
+        print(result)
+        # for chunk in result:
+        #     print(chunk.text, end = "")
 
 if __name__ == "__main__":
     main()

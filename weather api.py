@@ -67,5 +67,41 @@ def get_current_weather(weather_api: str, location: str) -> dict:
         logging.error(f"An unexpected error occurred when fetching weather data: {e}")
         return()
 
+
+def get_weather_forecast(weather_api: str, location: str) -> dict:
+    '''
+    This function is used to fetch current weather using the weather 
+    api and location provided by the user
+    '''
+    url = "http://api.weatherapi.com/v1/forecast.json"
+    params = {
+        "key": weather_api,
+        "q": location,
+        "aqi": "yes"
+    }
+    try:
+        response = requests.get(url, params, timeout = 10)
+        response.raise_for_status()
+        logging.info("Request to %s return status code: %s", url, response.status_code)
+        return response.json()
+    except HTTPError as http_err:
+        logging.error(f"HTTP error occurred: {http_err}")
+        if response.status_code == 400:
+            logging.error("Bad request. Please check the location provided.")
+        return()
+    except ConnectionError as conn_err:
+        logging.error(f"Connection error occurred: {conn_err}")
+        return()
+    except Timeout as time_err:
+        logging.error(f"Timeout error occurred: {time_err}")
+        return()
+    except RequestException as req_err:
+        logging.error(f"Request error occurred: {req_err}")
+        return()
+    except Exception as e:
+        logging.error(f"An unexpected error occurred when fetching weather data: {e}")
+        return()
+
+
 if __name__ == "__main__":
     main()
