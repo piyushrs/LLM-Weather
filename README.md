@@ -13,3 +13,8 @@
 weather_api=<your_api_token>
 google_api=<your_google_api_token>
 ```
+
+## How to run this project?
+
+* You can run the `llm_function_def.py`(name is temporary) in your native terminal after you place the `.env` file in same directory as this file.
+* If you want to test the weather functions/ add new functions from the API, you can test them in `weather api.py` file.
