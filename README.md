@@ -1,6 +1,6 @@
 *Disclaimer: This README is a WIP*
 ## Steps for getting weather API
-* Sign up on (weatherapi)[https://www.weatherapi.com/]
+* Sign up on [weatherapi](https://www.weatherapi.com/)
 * Generate an API token
 
 ## Steps for getting the Google API token
