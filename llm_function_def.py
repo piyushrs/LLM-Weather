@@ -12,6 +12,46 @@ try:
 except ValueError as ve:
     logging.error(f"Configuration error: {ve}")
 
+def get_weather_forecast(location: str, days: int) -> dict:
+    '''
+    This function is used to fetch current weather and the forecast using the weather 
+    api and location provided by the user. You can specify the number of days for the forecast.
+    Args:
+        location (str): The location for which to fetch the weather forecast.
+        days (int): The number of days for the forecast.
+    Returns:
+        dict: The weather forecast data for the specified location.
+    '''
+    url = "http://api.weatherapi.com/v1/forecast.json"
+    params = {
+        "key": os.getenv("weather_api"),
+        "q": location,
+        "aqi": "yes",
+        "alerts": "yes",
+        "days": 3
+    }
+    try:
+        response = requests.get(url, params, timeout = 10)
+        response.raise_for_status()
+        logging.info("Request to %s return status code: %s", url, response.status_code)
+        return response.json()
+    except HTTPError as http_err:
+        logging.error(f"HTTP error occurred: {http_err}")
+        if response.status_code == 400:
+            logging.error("Bad request. Please check the location provided.")
+        return()
+    except ConnectionError as conn_err:
+        logging.error(f"Connection error occurred: {conn_err}")
+        return()
+    except Timeout as time_err:
+        logging.error(f"Timeout error occurred: {time_err}")
+        return()
+    except RequestException as req_err:
+        logging.error(f"Request error occurred: {req_err}")
+        return()
+    except Exception as e:
+        logging.error(f"An unexpected error occurred when fetching weather data: {e}")
+        return()
 
 def get_current_weather(location: str) -> dict:
     '''
@@ -137,7 +177,7 @@ def call_llm(prompt: str):
 
     # You can pass your functions directly in config for the LLM to decide which function to call.
     config = {
-        "tools": [get_current_weather, get_aqi]
+        "tools": [get_current_weather, get_aqi, get_weather_forecast]
     }
 
     chat = client.chats.create(model = "gemini-2.0-flash", config=config)

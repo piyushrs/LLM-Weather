@@ -19,6 +19,8 @@ def main():
         loc = input("Enter your location: ")
         weather_data = get_current_weather(weather_api, loc)
         pprint(weather_data)
+        forecast = get_weather_forecast(weather_api, loc, 3)
+        pprint(f"Forecast for your city: \n{forecast}")
 
     except ValueError as ve:
         logging.error(f"Configuration error: {ve}")
@@ -68,7 +70,7 @@ def get_current_weather(weather_api: str, location: str) -> dict:
         return()
 
 
-def get_weather_forecast(weather_api: str, location: str) -> dict:
+def get_weather_forecast(weather_api: str, location: str, days: int) -> dict:
     '''
     This function is used to fetch current weather using the weather 
     api and location provided by the user
@@ -77,7 +79,9 @@ def get_weather_forecast(weather_api: str, location: str) -> dict:
     params = {
         "key": weather_api,
         "q": location,
-        "aqi": "yes"
+        "aqi": "yes",
+        "alerts": "yes",
+        "days": 3
     }
     try:
         response = requests.get(url, params, timeout = 10)
