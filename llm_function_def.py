@@ -1,6 +1,7 @@
 import os
 import requests
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
+from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 import logging
 from google import genai
 from google.genai import types
@@ -14,8 +15,10 @@ except ValueError as ve:
 
 def get_weather_forecast(location: str, days: int) -> dict:
     '''
-    This function is used to fetch current weather and the forecast using the weather 
-    api and location provided by the user. You can specify the number of days for the forecast.
+    This function can be used to get the forecast, current weather and the aqi of the location that the user has provided.
+    You need to input the number of days for the forecast as the user has provided.
+    If the number of days are not provided by the user, you can provide a default value of 1 day.
+    Always output this in a markdown table format.
     Args:
         location (str): The location for which to fetch the weather forecast.
         days (int): The number of days for the forecast.
@@ -53,152 +56,113 @@ def get_weather_forecast(location: str, days: int) -> dict:
         logging.error(f"An unexpected error occurred when fetching weather data: {e}")
         return()
 
-def get_current_weather(location: str) -> dict:
-    '''
-    This function is used to fetch current weather using the weather 
-    api and location provided by the user.
+# def get_current_weather(location: str) -> dict:
+#     '''
+#     This function is used to fetch current weather using the weather 
+#     api and location provided by the user.
 
-    Args: 
-        location (str): The location for which to fetch the weather.
+#     Args: 
+#         location (str): The location for which to fetch the weather.
     
-    Returns:
-        dict: The current weather data for the specified location.
-    '''
-    print("Fetching weather data...")
-    url = "http://api.weatherapi.com/v1/current.json"
-    params = {
-        "key": os.getenv("weather_api"),
-        "q": location,
-    }
-    try:
-        response = requests.get(url, params, timeout = 10)
-        response.raise_for_status()
-        logging.info("Request to %s return status code: %s", url, response.status_code)
-        return response.json()
-    except HTTPError as http_err:
-        logging.error(f"HTTP error occurred: {http_err}")
-        if response.status_code == 400:
-            logging.error("Bad request. Please check the location provided.")
-        return()
-    except ConnectionError as conn_err:
-        logging.error(f"Connection error occurred: {conn_err}")
-        return()
-    except Timeout as time_err:
-        logging.error(f"Timeout error occurred: {time_err}")
-        return()
-    except RequestException as req_err:
-        logging.error(f"Request error occurred: {req_err}")
-        return()
-    except Exception as e:
-        logging.error(f"An unexpected error occurred when fetching weather data: {e}")
-        return()
+#     Returns:
+#         dict: The current weather data for the specified location.
+#     '''
+#     print("Fetching weather data...")
+#     url = "http://api.weatherapi.com/v1/current.json"
+#     params = {
+#         "key": os.getenv("weather_api"),
+#         "q": location,
+#     }
+#     try:
+#         response = requests.get(url, params, timeout = 10)
+#         response.raise_for_status()
+#         logging.info("Request to %s return status code: %s", url, response.status_code)
+#         return response.json()
+#     except HTTPError as http_err:
+#         logging.error(f"HTTP error occurred: {http_err}")
+#         if response.status_code == 400:
+#             logging.error("Bad request. Please check the location provided.")
+#         return()
+#     except ConnectionError as conn_err:
+#         logging.error(f"Connection error occurred: {conn_err}")
+#         return()
+#     except Timeout as time_err:
+#         logging.error(f"Timeout error occurred: {time_err}")
+#         return()
+#     except RequestException as req_err:
+#         logging.error(f"Request error occurred: {req_err}")
+#         return()
+#     except Exception as e:
+#         logging.error(f"An unexpected error occurred when fetching weather data: {e}")
+#         return()
     
 
-def get_aqi(location: str) -> dict:
-    '''
-    This function is used to fetch current weather and the AQI using the weather 
-    api and location provided by the user
+# def get_aqi(location: str) -> dict:
+#     '''
+#     This function is used to fetch current weather and the AQI using the weather 
+#     api and location provided by the user
 
-    Args:
-        location (str): The location for which to fetch the weather and aqi information.
+#     Args:
+#         location (str): The location for which to fetch the weather and aqi information.
     
-    Returns:
-        dict: The current weather and AQI data for the specified location.
-    '''
-    print("Fetching weather data...")
-    url = "http://api.weatherapi.com/v1/current.json"
-    params = {
-        "key": os.getenv("weather_api"),
-        "q": location,
-        "aqi": "yes"
-    }
-    try:
-        response = requests.get(url, params, timeout = 10)
-        response.raise_for_status()
-        logging.info("Request to %s return status code: %s", url, response.status_code)
-        return response.json()
-    except HTTPError as http_err:
-        logging.error(f"HTTP error occurred: {http_err}")
-        if response.status_code == 400:
-            logging.error("Bad request. Please check the location provided.")
-        return()
-    except ConnectionError as conn_err:
-        logging.error(f"Connection error occurred: {conn_err}")
-        return()
-    except Timeout as time_err:
-        logging.error(f"Timeout error occurred: {time_err}")
-        return()
-    except RequestException as req_err:
-        logging.error(f"Request error occurred: {req_err}")
-        return()
-    except Exception as e:
-        logging.error(f"An unexpected error occurred when fetching weather data: {e}")
-        return()
+#     Returns:
+#         dict: The current weather and AQI data for the specified location.
+#     '''
+#     print("Fetching weather data...")
+#     url = "http://api.weatherapi.com/v1/current.json"
+#     params = {
+#         "key": os.getenv("weather_api"),
+#         "q": location,
+#         "aqi": "yes"
+#     }
+#     try:
+#         response = requests.get(url, params, timeout = 10)
+#         response.raise_for_status()
+#         logging.info("Request to %s return status code: %s", url, response.status_code)
+#         return response.json()
+#     except HTTPError as http_err:
+#         logging.error(f"HTTP error occurred: {http_err}")
+#         if response.status_code == 400:
+#             logging.error("Bad request. Please check the location provided.")
+#         return()
+#     except ConnectionError as conn_err:
+#         logging.error(f"Connection error occurred: {conn_err}")
+#         return()
+#     except Timeout as time_err:
+#         logging.error(f"Timeout error occurred: {time_err}")
+#         return()
+#     except RequestException as req_err:
+#         logging.error(f"Request error occurred: {req_err}")
+#         return()
+#     except Exception as e:
+#         logging.error(f"An unexpected error occurred when fetching weather data: {e}")
+#         return()
 
 def call_llm(prompt: str):
     '''
     Calls the LLM
     '''
 
-    # Function declarations for the LLM if you don't have docstrings in your functions
-    # get_current_weather_function = {
-    #     "name": "get_current_weather",
-    #     "description": "Fetches the current weather for a specified location.",
-    #     "parameters": {
-    #         "type": "object",
-    #         "properties": {
-    #             "location": {
-    #                 "type": "string",
-    #                 "description": "The city or area for which to get the weather (e.g., 'London', 'Paris France').",
-    #             },
-    #         },
-    #         "required": ["location"],
-    #     },
-    # }
-
-    # get_aqi_function = {
-    #     "name": "get_aqi",
-    #     "description": "Fetches the air quality index for a specified location.",
-    #     "parameters": {
-    #         "type": "object",
-    #         "properties": {
-    #             "location": {
-    #                 "type": "string",
-    #                 "description": "The city or area for which to get the AQI (e.g., 'London', 'Paris France').",
-    #             },
-    #         },
-    #         "required": ["location"],
-    #     },
-    # }
-
     client = genai.Client(api_key= google_api)
-    # tools = types.Tool(function_declarations=[get_current_weather, get_aqi])
-    # config = types.GenerateContentConfig(tools=[tools])
+
+    google_search_tool = Tool(
+        google_search = GoogleSearch()
+    )   
 
     # You can pass your functions directly in config for the LLM to decide which function to call.
-    config = {
-        "tools": [get_current_weather, get_aqi, get_weather_forecast]
-    }
-
-    chat = client.chats.create(model = "gemini-2.0-flash", config=config)
+    # config = {
+    #     "tools": [get_weather_forecast, google_search_tool]
+    # }
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(
+            google_search=types.GoogleSearchRetrieval(
+                dynamic_retrieval_config=types.DynamicRetrievalConfig(
+                    dynamic_threshold=0.6))
+        )]
+    )
+    chat = client.chats.create(model = "gemini-2.0-flash", config = config)
     response = chat.send_message(prompt)
     return response.text
-    # response = client.models.generate_content(
-    #     model="gemini-2.0-flash",
-    #     contents= prompt,
-    #     config=config,
-    # )
-
-    # if response.candidates[0].content.parts[0].function_call:
-    #     function_call = response.candidates[0].content.parts[0].function_call
-    #     print(f"Function to call: {function_call.name}")
-    #     print(f"Arguments: {function_call.args}")
-    # #  In a real app, you would call your function here:
-    #     result = get_current_weather(**function_call.args)
-    #     return result
-    # else:
-    #     # print("No function call found in the response.")
-    #     return(response)
     
 def main():
     '''
